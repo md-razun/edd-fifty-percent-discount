@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: EDD Special Discount By RexTheme
- * Description: Applies a 50% discount as a negative fee in Easy Digital Downloads for customers from South Asia (IP-based detection). Removes coupons unless user manually applies one.
- * Version: 1.11.1
+ * Description: Applies a 50% discount as a negative fee for eligible South Asian customers (IP-based). If a coupon is applied, the 50% discount is removed; when coupons are removed, it’s re-applied.
+ * Version: 1.1.23
  * Author: RexTheme
  */
 
@@ -54,7 +54,7 @@ function cl_get_country_from_ip() {
  */
 function cl_apply_special_discount() {
     $country = cl_get_country_from_ip();
-    error_log('Customer country detected: ' . $country);
+
     $existing_fees = EDD()->fees->get_fees();
 
     // Always remove old discount first
@@ -76,7 +76,6 @@ function cl_apply_special_discount() {
     $cart_total = edd_get_cart_subtotal();
     if ( $cart_total > 0 ) {
         $discount_amount = $cart_total * 0.5;
-
         EDD()->fees->add_fee( array(
                 'amount' => -$discount_amount,
                 'label'  => 'Special Discount (50%)',
@@ -86,7 +85,7 @@ function cl_apply_special_discount() {
         ));
     }
 }
-add_action( 'edd_cart_fees', 'cl_apply_special_discount' );
+add_action( 'edd_cart_items_before', 'cl_apply_special_discount' );
 
 /**
  * When user manually applies a coupon → remove 50% discount and let coupon work.
@@ -110,45 +109,32 @@ function cl_user_removed_coupon( $code ) {
 add_action( 'edd_cart_discount_removed', 'cl_user_removed_coupon' );
 
 /**
- * Add some CSS to style the discount fee nicely
+ * Vanilla JS: remove 50% fee row when a coupon is applied on the frontend
  */
-add_action( 'wp_head', function() {
-    if ( edd_is_checkout() ) {
+add_action( 'wp_footer', function() {
+    if ( function_exists( 'edd_is_checkout' ) && edd_is_checkout() ) {
         ?>
-        <style type="text/css">
-            .edd-cart-fee-special_discount {
-                color: #27ae60 !important;
-                font-weight: bold;
-                background-color: #f8f9fa;
-                padding: 5px;
-                border-radius: 3px;
-            }
-            .edd-cart-fee-special_discount .edd-cart-fee-amount {
-                color: #e74c3c !important;
-            }
-        </style>
-        <?php
-    }
-});
+        <script>
+        (function() {
+          function removeSpecialDiscountRow() {
+            var row = document.getElementById('edd_cart_fee_special_discount');
+            if (row && row.parentNode) { row.parentNode.removeChild(row); }
+          }
 
-/**
- * Optional: Add a notice above checkout cart
- */
-add_action( 'edd_before_checkout_cart', function() {
-    $country = cl_get_country_from_ip();
-    $existing_fees = EDD()->fees->get_fees();
-    error_log(print_r($existing_fees, true));
-    cl_apply_special_discount();
-    error_log('country in notice: ' . $country);
-    if ( in_array( $country, cl_get_eligible_countries(), true ) ) {
-        if ( isset( $existing_fees['special_discount'] ) ) {
-            echo '<div style="background: #d4edda; color: #155724; padding: 15px; border: 1px solid #c3e6cb; border-radius: 5px; margin-bottom: 20px;">';
-            echo '<strong>🎉 Congratulations!</strong> You are eligible for our special 50% regional discount!';
-            echo '</div>';
-        } elseif ( edd_has_active_discounts() ) {
-            echo '<div style="background: #fff3cd; color: #856404; padding: 15px; border: 1px solid #ffeeba; border-radius: 5px; margin-bottom: 20px;">';
-            echo '<strong>💡 Note:</strong> Coupon applied, so regional 50% discount has been disabled.';
-            echo '</div>';
-        }
+          // Listen for native custom event (if fired by EDD or other scripts)
+          document.addEventListener('edd_coupon_applied', removeSpecialDiscountRow, true);
+
+          // Try to react after clicking common "apply coupon" triggers
+          document.addEventListener('click', function(e) {
+            var t = e.target;
+            if (!t) return;
+            if (t.matches('#edd-apply-discount, [name="edd-apply-discount"], .edd-apply-discount, button[data-edd-action="apply_discount"], input[type="submit"][value*="coupon" i], #apply_discount')) {
+              setTimeout(removeSpecialDiscountRow, 250);
+            }
+          }, true);
+
+        }());
+        </script>
+        <?php
     }
 });
