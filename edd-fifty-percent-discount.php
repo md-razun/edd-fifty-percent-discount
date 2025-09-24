@@ -146,7 +146,7 @@ add_action( 'wp_footer', function() {
             </div>
             <h2>Celebrating South Asia With 50% OFF</h2>
             <p>It looks like you are from an awesome region in South Asia. So today, we have something special for you - an exclusive 50% OFF on any plugin you want.</p>
-            <a href="#" class="fifty-percent-discount-cta-button">
+            <a href="https://rextheme.com/products/#plugins" target="_blank" class="fifty-percent-discount-cta-button">
                 <span>Check Out Our Plugins</span>
             </a>
         </div>
