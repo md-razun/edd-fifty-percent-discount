@@ -97,7 +97,7 @@ function fifty_percent_discount_apply_special_discount() {
         $discount_amount = $cart_total * 0.5;
         EDD()->fees->add_fee( array(
                 'amount' => -$discount_amount,
-                'label'  => 'Special Discount (50%)',
+                'label'  => 'Special Discount for South Asia',
                 'id'     => 'special_discount',
                 'type'   => 'discount',
                 'no_tax' => true
