@@ -32,21 +32,41 @@ function fifty_percent_discount_get_country_from_ip() {
         return $cached_country;
     }
 
-    // API call
+    $country = '';
+
+    // First API: ipinfo.io
     $response = wp_remote_get( "https://ipinfo.io/{$ip}/json", array( 'timeout' => 5 ) );
 
-    if ( is_wp_error( $response ) ) {
-        return '';
+    if ( ! is_wp_error( $response ) ) {
+        $data = json_decode( wp_remote_retrieve_body( $response ) );
+        if ( isset( $data->country ) && ! empty( $data->country ) ) {
+            $country = $data->country;
+        }
     }
 
-    $data = json_decode( wp_remote_retrieve_body( $response ) );
-    if ( isset( $data->country ) ) {
-        set_transient( 'fifty_percent_discount_country_' . $ip, $data->country, DAY_IN_SECONDS );
-        return $data->country;
+    // Fallback API: ip-api.com
+    if ( empty( $country ) ) {
+        $response = wp_remote_get( "http://ip-api.com/json/{$ip}?fields=countryCode", array( 'timeout' => 5 ) );
+
+        if ( ! is_wp_error( $response ) ) {
+            $data = json_decode( wp_remote_retrieve_body( $response ) );
+            if ( isset( $data->countryCode ) && ! empty( $data->countryCode ) ) {
+                $country = $data->countryCode;
+            }
+        }
     }
 
-    return 'BD';
+    // Default fallback to BD
+    if ( empty( $country ) ) {
+        $country = 'BD';
+    }
+
+    // Cache result for 24 hours
+    set_transient( 'fifty_percent_discount_country_' . $ip, $country, DAY_IN_SECONDS );
+
+    return $country;
 }
+
 
 /**
  * Apply exclusive 50% discount as negative fee (default for eligible users).
