@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: EDD Special Discount By RexTheme
- * Description: Applies a 50% discount as a negative fee for eligible South Asian customers (IP-based). If a coupon is applied, the 50% discount is removed; when coupons are removed, it’s re-applied.
- * Version: 1.1.23
+ * Plugin Name: EDD Special Discount By RexTheme - Improved
+ * Description: Applies a 50% discount as a negative fee for eligible South Asian customers (IP-based). Enhanced with better error handling and user experience.
+ * Version: 1.2.0
  * Author: RexTheme
  */
 
@@ -160,123 +160,217 @@ add_action( 'wp_footer', function() {
     $country = fifty_percent_discount_get_country_from_ip();
     if ( in_array( $country, fifty_percent_discount_get_eligible_countries(), true ) && get_option( 'fifty_percent_discount_popup_cancelled' ) !== 'yes' ) {
         ?>
-        <div id="fifty-percent-discount-popup" role="dialog" aria-live="polite" aria-label="Special Discount">
-            <button type="button" id="fifty-percent-discount-close-popup" aria-label="Close">&times;</button>
-            <div class="fifty-percent-discount-header-image">
-            </div>
-            <h2>Celebrating South Asia With 50% OFF</h2>
-            <p>It looks like you are from an awesome region in South Asia. So today, we have something special for you - an exclusive 50% OFF on any plugin you want.</p>
-            <a href="https://rextheme.com/products/#plugins" target="_blank" class="fifty-percent-discount-cta-button">
-                <span>Check Out Our Plugins</span>
-            </a>
+
+
+        <div 
+            id="fifty-percent-discount-popup" 
+            class="fifty-percent-discount-popup" 
+            role="dialog" 
+            aria-modal="true" 
+            aria-labelledby="fifty-percent-discount-heading" 
+            aria-describedby="fifty-percent-discount-description" 
+        >
+
+           
+            <div class="fifty-percent-discount-popup__content">
+                 <!-- Close Button -->
+                <button 
+                    type="button" 
+                    id="fifty-percent-discount-close-popup" 
+                    class="fifty-percent-discount-popup__close" 
+                    aria-label="<?php esc_attr_e('Close popup', 'rextheme'); ?>"
+                >
+                   
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15.8569 2.14258L2.14258 15.8569" stroke="#666666" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2.14258 2.14258L15.8569 15.8569" stroke="#666666" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+
+                </button>
+
+                <!-- Logo Image -->
+                <img 
+                    src="<?php echo esc_url( plugin_dir_url(__FILE__) . 'image/celebrating-south-asia.webp' ); ?>" 
+                    alt="<?php esc_attr_e('Celebrating South Asia', 'rextheme'); ?>" 
+                    class="fifty-percent-discount-popup__logo"
+                    loading="lazy"
+                >
+
+                <!-- Heading -->
+                <h2 id="fifty-percent-discount-heading" class="fifty-percent-discount-popup__heading">
+                    <?php esc_html_e('Celebrating South Asia With ', 'rextheme'); ?> <span class="fifty-percent-discount-popup__heading-highlight">50% OFF</span> 
+                </h2>
+
+                <!-- Description -->
+                <p id="fifty-percent-discount-description" class="fifty-percent-discount-popup__text">
+                    <?php esc_html_e('It looks like you are from an awesome region in South Asia. Today, we have something special for you – an exclusive 50% OFF on any plugin you want.', 'rextheme'); ?>
+                </p>
+
+                <!-- CTA Button -->
+
+                <div class="fifty-percent-discount-popup__cta-button">
+                    <a 
+                        href="https://rextheme.com/products/#plugins" 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        class="fifty-percent-discount-popup__cta"
+                    >
+
+                        <span class="cta-btn-inner">
+                            <span class="btn-icon">
+                                <svg width="12" height="12" fill="none" viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg"><path stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 11L11 1m0 10V1H1"></path></svg>
+                            </span>
+
+                                <span><?php esc_html_e('Check Out Our Plugins', 'rextheme'); ?></span>
+                        </span>
+                    </a>
+                </div>
         </div>
+    </div>
+
+
+
         <style>
-            /* Standalone popup (no overlay) */
+     
             #fifty-percent-discount-popup {
                 position: fixed;
                 bottom: 20px;
                 left: 20px;
                 z-index: 9999;
-                background-color: #fff;
-                padding: 0; /* Adjusted for image */
-                border-radius: 10px;
-                text-align: left;
+                display: none; 
+                max-width: 555px;
+                border-radius: 20px 0 20px 20px;
+                box-shadow: 0 20px 120px 0 rgba(12, 12, 86, 0.80);
                 animation: fifty-percent-discount-popup-animation 0.5s ease-in-out;
-                max-width: 400px;
-                box-shadow: 0 0 20px rgba(0,0,0,0.2);
-                margin: 0;
-                display: none; /* shown via JS */
-                overflow: hidden; /* Ensures rounded corners cut off image */
+                background-color: #fff;
             }
 
-            .fifty-percent-discount-header-image {
-                background-image: url('https://i.imgur.com/Qk26d7J.png'); /* YOUR PROVIDED IMAGE URL */
-                background-size: cover;
-                background-position: center;
-                height: 180px; /* Height of the header section */
-                position: relative;
-                margin-bottom: 20px; /* Space between header and text */
-                background-color: #0d0d4e; /* Fallback for image loading, matching a dark blue in your image */
-            }
-
-            /* Removed .fifty-percent-discount-off-text and its ::before as it's in the image */
-
-            #fifty-percent-discount-popup h2 {
-                color: #212529; /* Darker text for better contrast */
-                font-size: 24px;
-                margin: 0 24px 12px 24px; /* Padding for text content */
-                font-weight: 700;
-                line-height: 1.3;
-            }
-            #fifty-percent-discount-popup p {
-                font-size: 15px;
-                margin: 0 24px 20px 24px; /* Padding for text content */
-                color: #495057;
-                line-height: 1.5;
-            }
-
-            /* Call to Action Button */
-            .fifty-percent-discount-cta-button {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                width: calc(100% - 48px); /* Full width minus padding */
-                margin: 0 24px 24px 24px; /* Centered with padding */
-                padding: 14px 20px;
-                border-radius: 8px;
-                /* Updated gradient to match the design's blue/teal button */
-                background: linear-gradient(to right, #00CFFF, #007DFF);
-                color: #fff;
-                font-size: 17px;
-                font-weight: 600;
-                text-decoration: none;
-                transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-                box-shadow: 0 4px 15px rgba(0, 114, 255, 0.4);
-            }
-            .fifty-percent-discount-cta-button:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 6px 20px rgba(0, 114, 255, 0.6);
-            }
-            .fifty-percent-discount-cta-button span {
-                position: relative;
-                padding-left: 25px; /* Space for the arrow icon */
-            }
-            .fifty-percent-discount-cta-button span::before {
-                content: '';
-                position: absolute;
-                left: 0;
-                top: 50%;
-                transform: translateY(-50%);
-                width: 16px; /* Size of the arrow */
-                height: 16px;
-                background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>'); /* White arrow SVG */
-                background-size: contain;
-                background-repeat: no-repeat;
-            }
-
-
-            /* Cross button in top-right */
+             /* Cross button in top-right */
             #fifty-percent-discount-close-popup {
                 position: absolute;
-                top: 10px;
-                right: 10px;
-                width: 32px;
-                height: 32px;
+                top: -15px;
+                right: -15px;
+                width: 36px;
+                height: 36px;
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
-                background: rgba(255, 255, 255, 0.2); /* Semi-transparent white for contrast on header */
-                color: #fff; /* White cross */
+                border-radius: 22px;
+                background: #FFF;
+                box-shadow: 0 5px 20px 0 rgba(10, 8, 90, 0.10);
                 border: none;
-                border-radius: 50%; /* Circular close button */
                 cursor: pointer;
-                font-size: 24px;
-                line-height: 1;
-                padding: 0;
-                z-index: 10000; /* Ensure it's above the header image */
+                z-index: 10000; 
             }
-            #fifty-percent-discount-close-popup:hover {
-                background: rgba(255, 255, 255, 0.4);
+
+            .fifty-percent-discount-popup__content {
+                padding: 20px 20px 40px;
+                
+            }
+
+
+            .fifty-percent-discount-popup__logo {
+                width: 100%;
+                height: auto;
+                display: block;
+                max-width: 100%;
+                margin-bottom: 20px;
+            }
+
+            .fifty-percent-discount-popup__cta-button {
+                display: block;
+                margin: 25px auto 0;
+                text-align: center;
+            }
+
+            .fifty-percent-discount-popup__cta {
+                position: relative;
+                color: #fff;
+                text-align: center;
+                font-family: "Inter", sans-serif;
+                font-size: 18px;
+                font-weight: 700;
+                line-height: 1.2;
+                -webkit-transition: all .3s ease;
+                -o-transition: all .3s ease;
+                -moz-transition: all .3s ease;
+                transition: all .3s ease;
+                display: inline-block;
+                filter: drop-shadow(20px 20px 60px rgba(21, 19, 119, 0.20));
+            }
+
+           .fifty-percent-discount-popup__cta::before {
+                content: "";
+                position: absolute;
+                left: -1px;
+                top: -1px;
+                width: calc(100% + 2px);
+                height: calc(100% + 2px);
+                background: linear-gradient(108deg,  #201cfe 0%,#00b4ff 21%,#ffffff 100%);
+            }
+
+            .fifty-percent-discount-popup__cta  .cta-btn-inner {
+                position: relative;
+                overflow: hidden;
+                display: inline-flex;
+                flex-flow: row wrap;
+                gap: 20px;
+                align-items: center;
+                padding: 19px 30px;
+                box-shadow: 0px 30px 60px #15137733;
+            }
+
+            .fifty-percent-discount-popup__cta  .cta-btn-inner::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 150%;
+                height: 100%;
+                transition: all 0.3s ease;
+                background: linear-gradient(140deg, #24EC2C 6.23%, #00B4FF 24.95%, #201CFE 99.45%);
+            }
+
+            .fifty-percent-discount-popup__cta .fifty-percent-discount-popup__cta-button:hover .cta-btn-inner::before {
+                left: -90px;
+            }
+
+            .fifty-percent-discount-popup__cta span {
+                position: relative;
+                z-index: 1;
+            }
+
+            .fifty-percent-discount-popup h2 {
+                max-width: 410px;
+                margin: 0 auto 20px;
+                color: #1A1A1D;
+                text-align: center;
+                font-family: 'Inter', sans-serif;
+                font-size: 32px;
+                font-weight: 700;
+                line-height: 1.28; 
+                letter-spacing: -1px;
+            }
+
+            .fifty-percent-discount-popup p {
+                max-width: 410px;
+                margin: 0 auto;
+                color: #505061;
+                text-align: center;
+                font-family: 'Inter', sans-serif;
+                font-size: 16px;
+                font-weight: 400;
+                line-height: 1.6;
+            }
+
+            .fifty-percent-discount-popup__heading-highlight {
+                color: #201CFE;
+                font-family: 'Inter', sans-serif;
+                font-size: 36px;
+                font-style: normal;
+                font-weight: 900;
+                line-height: 46px;
+                letter-spacing: -1px;
             }
 
             @keyframes fifty-percent-discount-popup-animation {
@@ -289,9 +383,103 @@ add_action( 'wp_footer', function() {
                     opacity: 1;
                 }
             }
-            @media (max-width: 480px) {
-                #fifty-percent-discount-popup { max-width: calc(100% - 40px); left: 20px; right: 20px; }
+            
+            @media only screen and (max-width: 1699px) {
+
             }
+
+            @media only screen and (max-width: 1399px) {
+                #fifty-percent-discount-popup {
+                    max-width: 500px;
+                }
+
+            }
+
+            @media only screen and (max-width: 1199px) {
+                #fifty-percent-discount-popup {
+                    max-width: 450px;
+                }
+
+                .fifty-percent-discount-popup h2 {
+                    font-size: 28px;
+                }
+
+                .fifty-percent-discount-popup__heading-highlight {
+                    font-size: 32px;
+                }
+
+                #fifty-percent-discount-close-popup {
+                    width: 30px;
+                    height: 30px;
+                }
+
+                #fifty-percent-discount-close-popup svg {
+                    display: block;
+                    width: 12px;
+                }
+
+            }
+
+            @media only screen and (max-width: 991px) {
+                .fifty-percent-discount-popup__content {
+                    padding: 16px 16px 30px;
+                }
+
+                #fifty-percent-discount-popup {
+                    max-width: 400px;
+                }
+
+                .fifty-percent-discount-popup h2 {
+                    font-size: 25px;
+                    margin: 0 auto 10px;
+                }
+
+                .fifty-percent-discount-popup__heading-highlight {
+                    font-size: 28px;
+                }
+            
+            }
+
+            @media only screen and (max-width: 767px) {
+                #fifty-percent-discount-popup {
+                    left: 10px;
+                    border-radius: 10px 0 10px 10px;
+                }
+                .fifty-percent-discount-popup__content {
+                    padding: 15px 15px 25px;
+                }
+
+                #fifty-percent-discount-popup {
+                    max-width: 290px;
+                }
+
+                .fifty-percent-discount-popup__cta .cta-btn-inner {
+                    padding: 16px 25px;
+                    gap: 10px;
+                }
+
+                .fifty-percent-discount-popup__cta {
+                    font-size: 15px;
+                }
+
+                .fifty-percent-discount-popup h2 {
+                    font-size: 23px;
+                    margin: 0 auto 10px;
+                    line-height: 1.2;
+                }
+
+                .fifty-percent-discount-popup__heading-highlight {
+                    font-size: 25px;
+                }
+
+                .fifty-percent-discount-popup p {
+                    font-size: 14px;
+                    line-height: 1.4;
+                }
+            }
+
+
+
         </style>
         <script>
             // Show the popup (no overlay)
