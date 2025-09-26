@@ -202,6 +202,7 @@ add_action( 'wp_footer', function() {
     }
     
     $country = fifty_percent_discount_get_country_from_ip();
+    $popup_nonce = wp_create_nonce( 'fifty_percent_discount_nonce' );
     if ( in_array( $country, fifty_percent_discount_get_eligible_countries(), true ) && get_option( 'fifty_percent_discount_popup_cancelled' ) !== 'yes' ) {
         ?>
 
@@ -526,6 +527,9 @@ add_action( 'wp_footer', function() {
 
         </style>
         <script>
+
+            const fiftyPercentDiscountNonce = '<?php echo esc_js( $popup_nonce ); ?>';
+
             // Show the popup (no overlay)
             setTimeout(function() {
                 var pop = document.getElementById('fifty-percent-discount-popup');
@@ -534,19 +538,18 @@ add_action( 'wp_footer', function() {
 
             // Close handler for the cross button with AJAX flag persist
             document.addEventListener('click', function(e) {
-                // Use querySelector for the first element with the class
                 var closeBtn = document.querySelector('.fifty-percent-discount-popup__close');
-
+                var clickedCloseBtn = e.target.closest('.fifty-percent-discount-popup__close');
                 // Check if the clicked element is the close button
-                if (closeBtn && e.target === closeBtn) {
+                if (closeBtn && clickedCloseBtn && clickedCloseBtn === closeBtn) {
                     var popup = document.getElementById('fifty-percent-discount-popup');
                     if (popup) popup.style.display = 'none';
 
                     // AJAX call to update option
                     var xhr = new XMLHttpRequest();
                     xhr.open('POST', '<?php echo admin_url("admin-ajax.php"); ?>', true);
-                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded;');
-                    xhr.send('action=fifty_percent_discount_cancel_popup');
+                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                    xhr.send('action=fifty_percent_discount_cancel_popup&_wpnonce=' + fiftyPercentDiscountNonce);
                 }
             });
 
@@ -560,6 +563,11 @@ add_action( 'wp_ajax_fifty_percent_discount_cancel_popup', 'fifty_percent_discou
 add_action( 'wp_ajax_nopriv_fifty_percent_discount_cancel_popup', 'fifty_percent_discount_cancel_popup' );
 
 function fifty_percent_discount_cancel_popup() {
+
+    if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( $_POST['_wpnonce'], 'fifty_percent_discount_nonce' ) ) {
+        wp_send_json_error( 'Invalid nonce' );
+    }
+
     update_option( 'fifty_percent_discount_popup_cancelled', 'yes' );
     wp_die();
 }
