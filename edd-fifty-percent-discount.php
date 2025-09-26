@@ -110,11 +110,9 @@ add_action( 'edd_cart_items_before', 'fifty_percent_discount_apply_special_disco
  * When user manually applies a coupon → remove 50% discount and let coupon work.
  */
 function fifty_percent_discount_user_applied_coupon( $code ) {
-    if (edd_is_discount_active($code)) {
-        $existing_fees = EDD()->fees->get_fees();
-        if (isset($existing_fees['special_discount'])) {
-            EDD()->fees->remove_fee('special_discount');
-        }
+    $existing_fees = EDD()->fees->get_fees();
+    if (isset($existing_fees['special_discount'])) {
+        EDD()->fees->remove_fee('special_discount');
     }
 }
 add_action( 'edd_cart_discount_set', 'fifty_percent_discount_user_applied_coupon' );
@@ -151,15 +149,27 @@ add_action( 'wp_footer', function() {
                             errorText.trim().length > 0; // Any error text means there's an error
                     }
 
-                    // Only remove the special discount row if coupon is VALID (no error)
-                    if (!hasError) {
+                    // Check if there's a visible discount row in the cart
+                    var discountRow = document.querySelector('.edd_cart_discount_row');
+                    var hasVisibleDiscount = false;
+                    if (discountRow) {
+                        var isHidden = discountRow.style.display === 'none' ||
+                            discountRow.style.visibility === 'hidden' ||
+                            discountRow.hasAttribute('hidden');
+                        hasVisibleDiscount = !isHidden;
+                    }
+
+                    // Remove the special discount row ONLY when:
+                    // 1. No error (coupon is valid) AND
+                    // 2. There's a visible discount row (discount successfully applied)
+                    if (!hasError && hasVisibleDiscount) {
                         var row = document.getElementById('edd_cart_fee_special_discount');
                         if (row && row.parentNode) {
                             row.parentNode.removeChild(row);
                         }
                     }
-                    // If there's an error (coupon is invalid), keep the special discount row
-                    console.log('Error detected:', hasError, errorWrap ? errorWrap.textContent : 'No error wrap');
+                    // Keep the special discount row if there's an error OR no visible discount
+                    console.log('Error detected:', hasError, 'Visible discount:', hasVisibleDiscount);
                 }
 
                 document.addEventListener('edd_coupon_applied', removeSpecialDiscountRowIfValid, true);
@@ -168,9 +178,24 @@ add_action( 'wp_footer', function() {
                     var t = e.target;
                     if (!t) return;
                     if (t.matches('#edd-apply-discount, [name="edd-apply-discount"], .edd-apply-discount, button[data-edd-action="apply_discount"], input[type="submit"][value*="coupon" i], #apply_discount')) {
+                        setTimeout(removeSpecialDiscountRowIfValid, 250);
+                        // Check again after a longer delay in case DOM updates are slow
                         setTimeout(removeSpecialDiscountRowIfValid, 1000);
                     }
                 }, true);
+
+                // Also observe cart changes to catch discount additions
+                var cartTable = document.querySelector('#edd_checkout_cart, .edd_cart');
+                if (cartTable) {
+                    var observer = new MutationObserver(function(mutations) {
+                        mutations.forEach(function(mutation) {
+                            if (mutation.type === 'childList') {
+                                setTimeout(removeSpecialDiscountRowIfValid, 100);
+                            }
+                        });
+                    });
+                    observer.observe(cartTable, { childList: true, subtree: true });
+                }
             }());
         </script>
         <?php
