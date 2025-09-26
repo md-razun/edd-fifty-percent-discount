@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: EDD Special Discount By RexTheme - Improved
+ * Plugin Name: EDD Special Discount By RexTheme
  * Description: Applies a 50% discount as a negative fee for eligible South Asian customers (IP-based). Enhanced with better error handling and user experience.
  * Version: 1.2.1
  * Author: RexTheme
