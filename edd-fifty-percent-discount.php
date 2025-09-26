@@ -214,7 +214,8 @@ add_action( 'wp_footer', function() {
 
     $popup_dismissed = is_popup_dismissed_for_ip();
 
-    if (in_array($country, fifty_percent_discount_get_eligible_countries(), true) && !$popup_dismissed) {
+    if (in_array($country, fifty_percent_discount_get_eligible_countries(), true) && !$popup_dismissed && function_exists( 'edd_is_checkout' ) &&
+            !edd_is_checkout()) {
         ?>
 
 
