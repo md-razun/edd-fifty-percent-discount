@@ -533,20 +533,24 @@ add_action( 'wp_footer', function() {
             }, 5000);
 
             // Close handler for the cross button with AJAX flag persist
-            (function(){
-                var closeBtn = document.getElementById('fifty-percent-discount-close-popup');
-                if (closeBtn) {
-                    closeBtn.addEventListener('click', function() {
-                        var pop = document.getElementById('fifty-percent-discount-popup');
-                        if (pop) pop.style.display = 'none';
-                        // Add ajax call to update option
-                        var xhr = new XMLHttpRequest();
-                        xhr.open('POST', '<?php echo admin_url( 'admin-ajax.php' ); ?>', true);
-                        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded;');
-                        xhr.send('action=fifty_percent_discount_cancel_popup');
-                    });
+            document.addEventListener('click', function(e) {
+                // Use querySelector for the first element with the class
+                var closeBtn = document.querySelector('.fifty-percent-discount-popup__close');
+
+                // Check if the clicked element is the close button
+                if (closeBtn && e.target === closeBtn) {
+                    var popup = document.getElementById('fifty-percent-discount-popup');
+                    if (popup) popup.style.display = 'none';
+
+                    // AJAX call to update option
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('POST', '<?php echo admin_url("admin-ajax.php"); ?>', true);
+                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded;');
+                    xhr.send('action=fifty_percent_discount_cancel_popup');
                 }
-            })();
+            });
+
+
         </script>
         <?php
     }
