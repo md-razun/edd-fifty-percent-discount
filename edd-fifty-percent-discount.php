@@ -200,10 +200,21 @@ add_action( 'wp_footer', function() {
         </script>
         <?php
     }
-    
+
+    function is_popup_dismissed_for_ip() {
+        $ip = edd_get_ip();
+        if (!$ip) return false;
+
+        $dismissed = get_transient('fifty_percent_discount_dismissed_' . md5($ip));
+        return $dismissed === 'yes';
+    }
+
     $country = fifty_percent_discount_get_country_from_ip();
     $popup_nonce = wp_create_nonce( 'fifty_percent_discount_nonce' );
-    if ( in_array( $country, fifty_percent_discount_get_eligible_countries(), true ) && get_option( 'fifty_percent_discount_popup_cancelled' ) !== 'yes' ) {
+
+    $popup_dismissed = is_popup_dismissed_for_ip();
+
+    if (in_array($country, fifty_percent_discount_get_eligible_countries(), true) && !$popup_dismissed) {
         ?>
 
 
@@ -568,7 +579,11 @@ function fifty_percent_discount_cancel_popup() {
         wp_send_json_error( 'Invalid nonce' );
     }
 
-    update_option( 'fifty_percent_discount_popup_cancelled', 'yes' );
+    $ip = edd_get_ip();
+    if ($ip) {
+        // Store dismissal for this IP for 30 days
+        set_transient('fifty_percent_discount_dismissed_' . md5($ip), 'yes', 30 * DAY_IN_SECONDS);
+    }
     wp_die();
 }
 
