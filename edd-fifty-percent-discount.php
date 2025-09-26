@@ -110,11 +110,11 @@ add_action( 'edd_cart_items_before', 'fifty_percent_discount_apply_special_disco
  * When user manually applies a coupon → remove 50% discount and let coupon work.
  */
 function fifty_percent_discount_user_applied_coupon( $code ) {
-    $existing_fees = EDD()->fees->get_fees();
-
-    // Remove our special discount fee completely
-    if ( isset( $existing_fees['special_discount'] ) ) {
-        EDD()->fees->remove_fee( 'special_discount' );
+    if (edd_is_discount_active($code)) {
+        $existing_fees = EDD()->fees->get_fees();
+        if (isset($existing_fees['special_discount'])) {
+            EDD()->fees->remove_fee('special_discount');
+        }
     }
 }
 add_action( 'edd_cart_discount_set', 'fifty_percent_discount_user_applied_coupon' );
@@ -134,25 +134,44 @@ add_action( 'wp_footer', function() {
     if ( function_exists( 'edd_is_checkout' ) && edd_is_checkout() ) {
         ?>
         <script>
-        (function() {
-          function removeSpecialDiscountRow() {
-            var row = document.getElementById('edd_cart_fee_special_discount');
-            if (row && row.parentNode) { row.parentNode.removeChild(row); }
-          }
 
-          // Listen for native custom event (if fired by EDD or other scripts)
-          document.addEventListener('edd_coupon_applied', removeSpecialDiscountRow, true);
+            (function() {
+                function removeSpecialDiscountRowIfValid() {
+                    // Check for EDD's error message (indicates invalid coupon)
+                    var errorWrap = document.getElementById('edd-discount-error-wrap');
 
-          // Try to react after clicking common "apply coupon" triggers
-          document.addEventListener('click', function(e) {
-            var t = e.target;
-            if (!t) return;
-            if (t.matches('#edd-apply-discount, [name="edd-apply-discount"], .edd-apply-discount, button[data-edd-action="apply_discount"], input[type="submit"][value*="coupon" i], #apply_discount')) {
-              setTimeout(removeSpecialDiscountRow, 250);
-            }
-          }, true);
+                    // Check if there's actually an error being displayed
+                    var hasError = false;
+                    if (errorWrap) {
+                        var errorText = errorWrap.textContent || errorWrap.innerText || '';
+                        // Check for common EDD error messages
+                        hasError = errorText.toLowerCase().includes('invalid') ||
+                            errorText.toLowerCase().includes('expired') ||
+                            errorText.toLowerCase().includes('error') ||
+                            errorText.trim().length > 0; // Any error text means there's an error
+                    }
 
-        }());
+                    // Only remove the special discount row if coupon is VALID (no error)
+                    if (!hasError) {
+                        var row = document.getElementById('edd_cart_fee_special_discount');
+                        if (row && row.parentNode) {
+                            row.parentNode.removeChild(row);
+                        }
+                    }
+                    // If there's an error (coupon is invalid), keep the special discount row
+                    console.log('Error detected:', hasError, errorWrap ? errorWrap.textContent : 'No error wrap');
+                }
+
+                document.addEventListener('edd_coupon_applied', removeSpecialDiscountRowIfValid, true);
+
+                document.addEventListener('click', function(e) {
+                    var t = e.target;
+                    if (!t) return;
+                    if (t.matches('#edd-apply-discount, [name="edd-apply-discount"], .edd-apply-discount, button[data-edd-action="apply_discount"], input[type="submit"][value*="coupon" i], #apply_discount')) {
+                        setTimeout(removeSpecialDiscountRowIfValid, 1000);
+                    }
+                }, true);
+            }());
         </script>
         <?php
     }
