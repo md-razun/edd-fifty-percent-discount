@@ -583,7 +583,7 @@ function fifty_percent_discount_cancel_popup() {
     $ip = edd_get_ip();
     if ($ip) {
         // Store dismissal for this IP for 30 days
-        set_transient('fifty_percent_discount_dismissed_' . md5($ip), 'yes', 30 * DAY_IN_SECONDS);
+        set_transient('fifty_percent_discount_dismissed_' . md5($ip), 'yes',  DAY_IN_SECONDS);
     }
     wp_die();
 }
